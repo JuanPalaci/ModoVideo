@@ -1,103 +1,119 @@
-org 100h
+org 100h          ; Dirección de inicio para programas COM en modo real (DOS)
 
+section .text     ; Sección de código
 
-section .text
-
+; Limpieza de registros para asegurar que no tengan basura
 XOR AX, AX
 XOR BX, BX
 XOR CX, CX
 XOR DX, DX
 
 main:
-    CALL IrAModoVideo
-    ;primer triangulo
-    ; se necesitan los parametros
-    MOV DX, 50d      ; Y inicial
-    MOV CX, 420d     ; centro X
-    MOV SI, 15d      ; altura
+    CALL IrAModoVideo      ; Cambiar a modo gráfico 640x480, 16 colores (modo 12h)
+
+    ; Primer triángulo (más pequeño, más arriba)
+    MOV DX, 50d            ; Coordenada Y inicial (fila)
+    MOV CX, 420d           ; Coordenada X del centro del triángulo
+    MOV SI, 15d            ; Altura del triángulo (número de filas)
     CALL DibujarTrianguloEquilatero
 
-    ; Segundo triángulo (más abajo)
-    MOV DX, 65d   ; eje Y en este caso incia cuando termina el otro triangulo
-    MOV CX, 420d  ; centro en X
-    MOV SI, 20d  ; altura
-    CALL DibujarTrianguloEquilatero
-    
-    ; Tercer triángulo (más grande)
-    MOV DX, 85d  ; eje Y
-    MOV CX, 420d ; Centro X
-    MOV SI, 25d  ;altura
+    ; Segundo triángulo (mediano, más abajo)
+    MOV DX, 65d
+    MOV CX, 420d
+    MOV SI, 20d
     CALL DibujarTrianguloEquilatero
 
-    ; Tronco
+    ; Tercer triángulo (más grande, más abajo aún)
+    MOV DX, 85d
+    MOV CX, 420d
+    MOV SI, 25d
+    CALL DibujarTrianguloEquilatero
+
+    ; Tronco del árbol (cuadrado marrón)
     CALL DibujarTronco
 
-    ; Esperar tecla para terminar
+    ; Esperar una tecla para finalizar el programa
     MOV AH, 00h
     INT 16h
-    RET
+    RET                   ; Salir del programa (regresa al DOS)
 
-int 20h
+int 20h                   ; Fin del programa (alternativa para DOS)
 
+; -----------------------
+; Subrutina para activar modo gráfico 12h
+; -----------------------
 IrAModoVideo:
-    MOV AH,00h
-    MOV AL, 12h   ; 640x480 px y 16 colores
-    INT 10h
+    MOV AH, 00h           ; Función 00h: cambiar modo de video
+    MOV AL, 12h           ; AL = 12h → modo gráfico 640x480, 16 colores
+    INT 10h               ; Interrupción BIOS para video
     RET
 
-
+; -----------------------
+; Subrutina para dibujar un triángulo equilátero
+; Entrada:
+;   DX = Y inicial
+;   CX = centro en X
+;   SI = altura
+; -----------------------
 DibujarTrianguloEquilatero:
-    PUSH CX         ; guarda centro original
-    MOV BP, 0       ; fila actual
-DTE_SiguienteFila:
-    POP AX          ; recupera centro original en AX
-    PUSH AX         ; volver a guardar para siguiente fila
+    PUSH CX               ; Guarda el centro original de X en la pila
+    MOV BP, 0             ; BP = fila actual (desde 0 hasta altura - 1)
 
-    SUB AX, BP      ; X inicial = centro - fila
-    MOV BX, AX      ; X para esta fila
-    MOV DI, 0       ; contador de píxeles
+DTE_SiguienteFila:
+    POP AX                ; Recupera el centro X en AX
+    PUSH AX               ; Lo vuelve a guardar para la siguiente fila
+
+    SUB AX, BP            ; Calcula el X inicial: centro - fila actual
+    MOV BX, AX            ; BX = coordenada X inicial para esta fila
+    MOV DI, 0             ; Contador de píxeles en la fila actual
 
 DTE_PintarPixel:
-    MOV AH, 0Ch
-    MOV AL, 02h     ; color verde
-    MOV BH, 00h
-    MOV CX, BX      ; CX = X
-    INT 10h
+    MOV AH, 0Ch           ; Función para escribir pixel (modo gráfico)
+    MOV AL, 02h           ; Color verde (02h)
+    MOV BH, 00h           ; Página 0
+    MOV CX, BX            ; CX = coordenada X actual
+    INT 10h               ; Dibuja pixel en (CX, DX)
 
-    INC BX
-    INC DI
+    INC BX                ; Avanza una posición en X
+    INC DI                ; Incrementa cantidad de píxeles dibujados
+
     MOV AX, BP
-    SHL AX, 1
-    INC AX
-    CMP DI, AX
-    JL DTE_PintarPixel
+    SHL AX, 1             ; AX = BP * 2
+    INC AX                ; AX = 2 * fila + 1 (ancho total de la fila)
 
-    INC DX
-    INC BP
-    CMP BP, SI
-    JL DTE_SiguienteFila
+    CMP DI, AX            ; ¿Ya se dibujaron todos los píxeles?
+    JL DTE_PintarPixel    ; Si no, sigue dibujando
 
-    POP CX          ; limpia pila final
+    INC DX                ; Baja una fila (Y)
+    INC BP                ; Avanza a la siguiente fila lógica
+    CMP BP, SI            ; ¿Ya se dibujaron todas las filas?
+    JL DTE_SiguienteFila  ; Si no, dibujar siguiente fila
+
+    POP CX                ; Limpia el último valor de la pila (ya no necesario)
     RET
 
-
-
-DibujarTronco:   ;este es un cuadrado de toda la vida
-    MOV DX, 110d   ; empieza debajo del último triángulo
+; -----------------------
+; Subrutina para dibujar el tronco del árbol
+; Dibuja un rectángulo marrón de 10 píxeles de ancho por 10 de alto
+; -----------------------
+DibujarTronco:
+    MOV DX, 110d          ; Fila inicial donde comienza el tronco (Y)
 FilaTronco:
-    MOV CX, 160d   ; X inicial
-    MOV SI, 0
-ColumnaTronco:
-    MOV AH, 0Ch
-    MOV AL, 06h    ; color marrón
-    MOV BH, 00h
-    INT 10h
-    INC CX
-    INC SI
-    CMP SI, 10
-    JL ColumnaTronco
+    MOV CX, 160d          ; Columna inicial (X) del tronco (izquierda del rectángulo)
+    MOV SI, 0             ; Contador para ancho
 
-    INC DX
-    CMP DX, 120d   ; 20 filas
-    JL FilaTronco
+ColumnaTronco:
+    MOV AH, 0Ch           ; Función de escribir pixel
+    MOV AL, 06h           ; Color marrón (06h)
+    MOV BH, 00h
+    INT 10h               ; Dibuja un pixel en (CX, DX)
+
+    INC CX                ; Siguiente columna
+    INC SI                ; Contador de ancho
+    CMP SI, 10            ; ¿Ya se dibujaron 10 columnas?
+    JL ColumnaTronco      ; Si no, seguir dibujando
+
+    INC DX                ; Siguiente fila
+    CMP DX, 120d          ; ¿Ya se hicieron 10 filas?
+    JL FilaTronco         ; Si no, seguir dibujando filas
     RET

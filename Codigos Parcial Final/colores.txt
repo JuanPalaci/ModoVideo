@@ -1,0 +1,25 @@
+| Número (AL) | Color         | Descripción         |
+|-------------|---------------|---------------------|
+| `00h` (0)   | Negro         | Fondo o sombra      |
+| `01h` (1)   | Azul          | Azul oscuro         |
+| `02h` (2)   | Verde         | Verde oscuro        |
+| `03h` (3)   | Cian          | Azul verdoso        |
+| `04h` (4)   | Rojo          | Rojo oscuro         |
+| `05h` (5)   | Magenta       | Rosa oscuro         |
+| `06h` (6)   | Marrón        | Café, tronco        |
+| `07h` (7)   | Gris claro    | Gris pálido         |
+| `08h` (8)   | Gris oscuro   | Gris más fuerte     |
+| `09h` (9)   | Azul claro    | Azul brillante      |
+| `0Ah` (10)  | Verde claro   | Verde brillante     |
+| `0Bh` (11)  | Cian claro    | Celeste             |
+| `0Ch` (12)  | Rojo claro    | Rojo brillante      |
+| `0Dh` (13)  | Magenta claro | Fucsia              |
+| `0Eh` (14)  | Amarillo      | Amarillo brillante  |
+| `0Fh` (15)  | Blanco        | Color más brillante |
+
+MOV AH, 0Ch        ; Función para encender un píxel
+MOV AL, 0Eh        ; Color: amarillo brillante
+MOV BH, 00h        ; Página 0
+MOV CX, 320        ; X
+MOV DX, 240        ; Y
+INT 10h

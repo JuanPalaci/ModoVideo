@@ -1,51 +1,49 @@
-ORG 100H
+org 100h
 
-SECTION .text
-    ; LIMPIAR LOS REGISTROS
-    XOR AX, AX
-    XOR BX, BX
-    XOR CX, CX
-    XOR DX, DX
-    CALL iniciarModoVideo
-    MOV DX, 90d
-    MOV CX, 70d   ;este parte de la coordenada (70,90) (fila,columna)
-    CALL imprimirCuadro
+section .text
+    ; Limpieza de registros para asegurar que no tengan basura
+XOR AX, AX
+XOR BX, BX
+XOR CX, CX
+XOR DX, DX
 
-imprimirCuadro:  ; esta es la  altura que es 50
-    CALL imprimirLinea
-    INC DX
-    CMP DX, 140d
-    JL imprimirCuadro
-    RET   
-imprimirLinea:  ;esta es el ancho que es 100
-    CALL encenderPixel
-    INC CX
-    CMP CX, 170d
-    JL imprimirLinea
-    MOV CX, 70d  ; vuelve para que pinte desde aqui
+main:
+    MOV SI, 90d
+    MOV DI, 70d
+    CALL IrAModoVideo
+    CALL DibujarCuadrado
+
+
+    int 20h
+
+
+IrAModoVideo:
+    MOV AH, 00h           ; Función 00h: cambiar modo de video
+    MOV AL, 12h           ; AL = 12h → modo gráfico 640x480, 16 colores
+    INT 10h               ; Interrupción BIOS para video
     RET
 
 
-iniciarModoVideo:
-    MOV AH, 00h
-    MOV AL, 12h
-    INT 10h
+DibujarCuadrado:    
+
+    EncenderPixel:
+    MOV   AH, 0Ch         ; Establecer la función de poner un píxel
+    MOV   AL, 04H         ; Color del píxel (rojo)
+    MOV   BH, 00H         ; Usar la página de video 0
+    MOV   CX, SI         ; Coordenada X del píxel
+    MOV   DX, DI         ; Coordenada Y del píxel
+    INT   10H             ; Llamar a la interrupción del BIOS para modo gráfico
+    JMP DibujarLinea
+
+    DibujarLinea:
+    INC SI
+    CMP SI, 190d
+    JL EncenderPixel
+    JMP DibujarColumna
+
+    DibujarColumna:
+    INC DI
+    MOV SI,90d
+    CMP DI,100d
+    JL EncenderPixel
     RET
-
-;@param
-; DX FILA
-; CX COLUMNA
-encenderPixel:
-    MOV AH, 0Ch
-    MOV AL, 04h
-    MOV BH, 00h
-    INT 10h
-    RET
-
-
-
-; para un trianuglo isoceles
-;1 -  vertice
-; 2- inc a un lado
-; 3- regreso a vertice
-; 4- decremento a un lado
